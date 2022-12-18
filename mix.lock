@@ -1,0 +1,5 @@
+%{
+  "atomex": {:hex, :atomex, "0.5.1", "706a8241fd6d1719b27a77b6d1192d2f85e6ecc78e6eadab29207d8cb9bb7ae5", [:mix], [{:xml_builder, "~> 2.1", [hex: :xml_builder, repo: "hexpm", optional: false]}], "hexpm", "6248891b5fcab8503982e090eedeeadb757a6311c2ef2e2998b874f7d319ab3f"},
+  "tz": {:hex, :tz, "0.24.0", "a9073f152c5a9d0abeafde57150cd61d9f11faa7fa3710a20e8487ce05c76cee", [:mix], [{:castore, "~> 0.1", [hex: :castore, repo: "hexpm", optional: true]}, {:mint, "~> 1.4", [hex: :mint, repo: "hexpm", optional: true]}], "hexpm", "5c08671bb10a56e09371106b08f5c9192449bb22e94a51de063c8c1317317027"},
+  "xml_builder": {:hex, :xml_builder, "2.2.0", "cc5f1eeefcfcde6e90a9b77fb6c490a20bc1b856a7010ce6396f6da9719cbbab", [:mix], [], "hexpm", "9d66d52fb917565d358166a4314078d39ef04d552904de96f8e73f68f64a62c9"},
+}
