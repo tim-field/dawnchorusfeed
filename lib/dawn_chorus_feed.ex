@@ -1,4 +1,6 @@
 defmodule DawnChorusFeed do
+  @domain "https://chorus.mohiohio.com"
+
   def main(args) do
     IO.puts(args |> Enum.take(1) |> create_feed())
   end
@@ -7,21 +9,21 @@ defmodule DawnChorusFeed do
   def create_feed(directory) do
     alias Atomex.Feed
 
-    Feed.new("https://chourus.mohiohio.com", DateTime.utc_now(), "Leith Valley Dawn Chorus")
+    Feed.new(@domain, DateTime.utc_now(), "Leith Valley Dawn Chorus")
     |> Feed.author("Tim Field", email: "tim@mohiohio.com")
-    |> Feed.link("https://chourus.mohiohio.com/feed.xml", rel: "self")
+    |> Feed.link(@domain <> "feed.xml", rel: "self")
     |> Feed.entries(
       directory
       |> File.ls!()
       |> Enum.map(fn fileName ->
-        get_entry(directory, "https://chourus.mohiohio.com/audio", fileName)
+        get_entry(directory, fileName)
       end)
     )
     |> Feed.build()
     |> Atomex.generate_document()
   end
 
-  defp get_entry(directory, url, fileName) do
+  defp get_entry(directory, fileName) do
     alias Atomex.Entry
     date = fileName |> parseDate()
 
@@ -30,7 +32,7 @@ defmodule DawnChorusFeed do
       date,
       "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")
     )
-    |> Entry.link(url <> fileName,
+    |> Entry.link(@domain <> "/audio/" <> fileName,
       rel: "enclosure",
       type: "audio/ogg",
       length: File.stat!(Path.join([directory, fileName])).size
