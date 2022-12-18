@@ -5,8 +5,9 @@ defmodule DawnChorusFeed.MixProject do
     [
       app: :dawnchorusfeed,
       version: "0.1.0",
+      escript: [main_module: DawnChorusFeed],
       elixir: "~> 1.14",
-      start_permanent: Mix.env() == :prod,
+      # start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
   end

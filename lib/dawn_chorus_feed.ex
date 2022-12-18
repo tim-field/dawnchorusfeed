@@ -1,16 +1,20 @@
 defmodule DawnChorusFeed do
-  @spec create_feed(String.t()) :: String.t()
+  def main(args) do
+    IO.puts(args |> Enum.take(1) |> create_feed())
+  end
+
+  # @spec create_feed(String.t()) :: String.t()
   def create_feed(directory) do
     alias Atomex.Feed
 
-    Feed.new("https://dawn-chourus.mohiohio.com", DateTime.utc_now(), "Leith Valley Dawn Chorus")
+    Feed.new("https://chourus.mohiohio.com", DateTime.utc_now(), "Leith Valley Dawn Chorus")
     |> Feed.author("Tim Field", email: "tim@mohiohio.com")
-    |> Feed.link("https://dawn-chourus.mohiohio.com/feed", rel: "self")
+    |> Feed.link("https://chourus.mohiohio.com/feed.xml", rel: "self")
     |> Feed.entries(
       directory
       |> File.ls!()
       |> Enum.map(fn fileName ->
-        get_entry(directory, "https://dawn-chourus.mohiohio.com/feed/audo", fileName)
+        get_entry(directory, "https://chourus.mohiohio.com/audio", fileName)
       end)
     )
     |> Feed.build()
