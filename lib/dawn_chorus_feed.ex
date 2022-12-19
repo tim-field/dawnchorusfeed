@@ -11,7 +11,11 @@ defmodule DawnChorusFeed do
 
     generate({
       :rss,
-      [version: 2, "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd"],
+      [
+        version: "2.0",
+        "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
+        "xmlns:atom": "http://www.w3.org/2005/Atom"
+      ],
       [
         {
           :channel,
@@ -24,11 +28,13 @@ defmodule DawnChorusFeed do
             {:description, nil,
              "Bird song field recordings from Leith Valley, Dunedin, New Zealand"},
             {"itunes:owner", nil,
-             [{"itunes:name", nil, "Tim Field"}, {"itunes:email", nil, "tim@mohiohoi.com"}]},
+             [{"itunes:name", nil, "Tim Field"}, {"itunes:email", nil, "tim@mohiohio.com"}]},
             {"itunes:image", %{href: @domain <> "feed.jpg"}, nil},
             {"itunes:category", %{text: "Science"},
              [{"itunes:category", %{text: "Nature"}, nil}]},
-            {"itunes:explicit", nil, "false"},
+            {"itunes:explicit", nil, "clean"},
+            {"atom:link",
+             %{href: @domain <> "feed.xml", rel: "self", type: "application/rss+xml"}, nil},
             directory
             |> File.ls!()
             |> Enum.sort(:desc)
@@ -54,7 +60,9 @@ defmodule DawnChorusFeed do
       {:description, nil,
        "A field recording of birdsong in Leith valley. Recorded at " <>
          Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
-      {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}}
+      {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}},
+      {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
+      {:guid, nil, url}
     ])
   end
 
