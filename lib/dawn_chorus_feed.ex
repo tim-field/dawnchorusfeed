@@ -7,61 +7,55 @@ defmodule DawnChorusFeed do
 
   # @spec create_feed(String.t()) :: String.t()
   def create_feed(directory) do
-    alias Atomex.Feed
+    import XmlBuilder
 
-    Feed.new(@domain, DateTime.utc_now(), "Leith Valley Dawn Chorus")
-    |> Feed.author("Tim Field", email: "tim@mohiohio.com")
-    |> Feed.add_field(
-      :description,
-      nil,
-      "Bird song field recordings from Leith Valley, Dunedin, New Zealand"
-    )
-    |> Feed.add_field(XmlBuilder.generate({:image, nil, [{:url, nil, @domain <> "feed.jpg"}]}))
-    |> Feed.add_field("itunes:image", nil, @domain <> "feed.jpg")
-    |> Feed.add_field("itunes:category", nil, "Nature")
-    |> Feed.add_field(:language, nil, "en-us")
-    |> Feed.add_field("itunes:explicit", nil, "False")
-    |> Feed.add_field("itunes:author", nil, "tim@mohiohio.com")
-    |> Feed.link(@domain <> "feed.xml", rel: "self")
-    |> Feed.entries(
-      directory
-      |> File.ls!()
-      |> Enum.sort(:desc)
-      |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
-      |> Enum.map(fn fileName ->
-        get_entry(directory, fileName)
-      end)
-    )
-    |> Feed.build(%{"xmlns:itunes" => "http://www.itunes.com/dtds/podcast-1.0.dtd"})
-    |> Atomex.generate_document()
+    generate({
+      :rss,
+      [version: 2, "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd"],
+      [
+        {
+          :channel,
+          nil,
+          [
+            {:title, nil, "Dawn Chorus"},
+            {:link, nil, @domain},
+            {:language, nil, "en-us"},
+            {"itunes:author", nil, "Tim Field"},
+            {:description, nil,
+             "Bird song field recordings from Leith Valley, Dunedin, New Zealand"},
+            {"itunes:owner", nil,
+             [{"itunes:name", nil, "Tim Field"}, {"itunes:email", nil, "tim@mohiohoi.com"}]},
+            {"itunes:image", %{href: @domain <> "feed.jpg"}, nil},
+            {"itunes:category", %{text: "Science"},
+             [{"itunes:category", %{text: "Nature"}, nil}]},
+            {"itunes:explicit", nil, "false"},
+            directory
+            |> File.ls!()
+            |> Enum.sort(:desc)
+            |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
+            |> Enum.map(fn fileName ->
+              get_entry(directory, fileName)
+            end)
+          ]
+        }
+      ]
+    })
   end
 
   defp get_entry(directory, fileName) do
-    alias Atomex.Entry
+    import XmlBuilder
+
     date = fileName |> parseDate()
     url = @domain <> "audio/" <> fileName
     fileSize = File.stat!(Path.join([directory, fileName])).size
 
-    Entry.new(
-      url,
-      date,
-      "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")
-    )
-    |> Entry.add_field(
-      :enclosure,
-      %{
-        url: url,
-        rel: "enclosure",
-        type: "audio/ogg",
-        length: fileSize
-      },
-      nil
-    )
-    |> Entry.summary(
-      "A field recording of birdsong in Leith valley. Recorded at " <>
-        Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")
-    )
-    |> Entry.build()
+    element(:item, nil, [
+      {:title, nil, "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
+      {:description, nil,
+       "A field recording of birdsong in Leith valley. Recorded at " <>
+         Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
+      {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}}
+    ])
   end
 
   @spec parseDate(String.t()) :: DateTime.t()

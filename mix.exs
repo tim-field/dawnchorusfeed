@@ -22,7 +22,7 @@ defmodule DawnChorusFeed.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:atomex, "~> 0.5.1"},
+      {:xml_builder, "~> 2.1"},
       {:tz, "~> 0.24.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
