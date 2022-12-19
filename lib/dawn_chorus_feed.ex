@@ -1,5 +1,5 @@
 defmodule DawnChorusFeed do
-  @domain "https://chorus.mohiohio.com"
+  @domain "https://chorus.mohiohio.com/"
 
   def main(args) do
     IO.puts(args |> Enum.take(1) |> create_feed())
@@ -11,32 +11,57 @@ defmodule DawnChorusFeed do
 
     Feed.new(@domain, DateTime.utc_now(), "Leith Valley Dawn Chorus")
     |> Feed.author("Tim Field", email: "tim@mohiohio.com")
+    |> Feed.add_field(
+      :description,
+      nil,
+      "Bird song field recordings from Leith Valley, Dunedin, New Zealand"
+    )
+    |> Feed.add_field(XmlBuilder.generate({:image, nil, [{:url, nil, @domain <> "feed.jpg"}]}))
+    |> Feed.add_field("itunes:image", nil, @domain <> "feed.jpg")
+    |> Feed.add_field("itunes:category", nil, "Nature")
+    |> Feed.add_field(:language, nil, "en-us")
+    |> Feed.add_field("itunes:explicit", nil, "False")
+    |> Feed.add_field("itunes:author", nil, "tim@mohiohio.com")
     |> Feed.link(@domain <> "feed.xml", rel: "self")
     |> Feed.entries(
       directory
       |> File.ls!()
+      |> Enum.sort(:desc)
+      |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
       |> Enum.map(fn fileName ->
         get_entry(directory, fileName)
       end)
     )
-    |> Feed.build()
+    |> Feed.build(%{"xmlns:itunes" => "http://www.itunes.com/dtds/podcast-1.0.dtd"})
     |> Atomex.generate_document()
   end
 
   defp get_entry(directory, fileName) do
     alias Atomex.Entry
     date = fileName |> parseDate()
+    url = @domain <> "audio/" <> fileName
+    fileSize = File.stat!(Path.join([directory, fileName])).size
 
     Entry.new(
-      fileName,
+      url,
       date,
       "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")
     )
-    |> Entry.link(@domain <> "/audio/" <> fileName,
-      rel: "enclosure",
-      type: "audio/ogg",
-      length: File.stat!(Path.join([directory, fileName])).size
+    |> Entry.add_field(
+      :enclosure,
+      %{
+        url: url,
+        rel: "enclosure",
+        type: "audio/ogg",
+        length: fileSize
+      },
+      nil
     )
+    |> Entry.summary(
+      "A field recording of birdsong in Leith valley. Recorded at " <>
+        Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")
+    )
+    |> Entry.build()
   end
 
   @spec parseDate(String.t()) :: DateTime.t()
