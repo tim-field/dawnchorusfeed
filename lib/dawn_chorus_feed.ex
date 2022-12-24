@@ -41,10 +41,11 @@ defmodule DawnChorusFeed do
             audioDirectory
             |> File.ls!()
             |> Enum.sort(:desc)
-            |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
+            |> Enum.filter(fn fileName -> String.ends_with?(fileName, ".opus") end)
             |> Enum.map(fn fileName ->
               get_entry(audioDirectory, fileName, findImage)
             end)
+            |> Enum.filter(fn entry -> entry !== nil end)
           ]
         }
       ]
@@ -75,33 +76,35 @@ defmodule DawnChorusFeed do
     import XmlBuilder
 
     date = fileName |> parseDate()
-    url = @domain <> "audio/" <> fileName
-    fileSize = File.stat!(Path.join([directory, fileName])).size
-    imageUrl = @domain <> "images/" <> findImage.(date)
 
-    element(:item, nil, [
-      {:title, nil, "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
-      {:description, nil,
-       "A field recording of birdsong in Leith valley. Recorded at " <>
-         Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
-      {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}},
-      {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
-      {"itunes:image", %{href: imageUrl}, nil},
-      {:guid, nil, url}
-    ])
+    if(date) do
+      url = @domain <> "audio/" <> fileName
+      fileSize = File.stat!(Path.join([directory, fileName])).size
+      imageUrl = @domain <> "images/" <> findImage.(date)
+
+      element(:item, nil, [
+        {:title, nil, "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
+        {:description, nil,
+         "A field recording of birdsong in Leith valley. Recorded at " <>
+           Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
+        {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}},
+        {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
+        {"itunes:image", %{href: imageUrl}, nil},
+        {:guid, nil, url}
+      ])
+    end
   end
 
   defp get_images(directory) do
     directory
     |> File.ls!()
-    |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
+    |> Enum.filter(fn fileName -> String.ends_with?(fileName, ".jpg") end)
     # |> Enum.sort(:desc)
     |> Enum.reduce(%{}, fn fileName, acc ->
       Map.put(acc, parseDate(fileName), fileName)
     end)
   end
 
-  @spec parseDate(String.t()) :: DateTime.t()
   defp parseDate(fileName) do
     parsed =
       Regex.named_captures(
@@ -109,20 +112,22 @@ defmodule DawnChorusFeed do
         fileName
       )
 
-    date =
-      Date.new!(
-        String.to_integer(parsed["year"]),
-        String.to_integer(parsed["month"]),
-        String.to_integer(parsed["day"])
-      )
+    if(parsed) do
+      date =
+        Date.new!(
+          String.to_integer(parsed["year"]),
+          String.to_integer(parsed["month"]),
+          String.to_integer(parsed["day"])
+        )
 
-    time =
-      Time.new!(
-        String.to_integer(parsed["hour"]),
-        String.to_integer(parsed["minute"]),
-        String.to_integer(parsed["second"])
-      )
+      time =
+        Time.new!(
+          String.to_integer(parsed["hour"]),
+          String.to_integer(parsed["minute"]),
+          String.to_integer(parsed["second"])
+        )
 
-    DateTime.new!(date, time, "Pacific/Auckland", Tz.TimeZoneDatabase)
+      DateTime.new!(date, time, "Pacific/Auckland", Tz.TimeZoneDatabase)
+    end
   end
 end
