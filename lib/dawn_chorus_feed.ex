@@ -2,12 +2,15 @@ defmodule DawnChorusFeed do
   @domain "https://chorus.mohiohio.com/"
 
   def main(args) do
-    IO.puts(args |> Enum.take(1) |> create_feed())
+    [audioDir, imageDir] = args
+    IO.puts(create_feed(audioDir, imageDir))
   end
 
   # @spec create_feed(String.t()) :: String.t()
-  def create_feed(directory) do
+  def create_feed(audioDirectory, imageDirectory) do
     import XmlBuilder
+
+    findImage = &get_image_file(get_images(imageDirectory), &1)
 
     generate({
       :rss,
@@ -35,12 +38,12 @@ defmodule DawnChorusFeed do
             {"itunes:explicit", nil, "clean"},
             {"atom:link",
              %{href: @domain <> "feed.xml", rel: "self", type: "application/rss+xml"}, nil},
-            directory
+            audioDirectory
             |> File.ls!()
             |> Enum.sort(:desc)
             |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
             |> Enum.map(fn fileName ->
-              get_entry(directory, fileName)
+              get_entry(audioDirectory, fileName, findImage)
             end)
           ]
         }
@@ -48,12 +51,33 @@ defmodule DawnChorusFeed do
     })
   end
 
-  defp get_entry(directory, fileName) do
+  defp get_image_file(images, audioDate) do
+    imageDate =
+      images
+      |> Map.keys()
+      |> Enum.reduce(nil, fn imageDate, min ->
+        cond do
+          min === nil ->
+            imageDate
+
+          abs(DateTime.diff(min, audioDate)) > abs(DateTime.diff(imageDate, audioDate)) ->
+            imageDate
+
+          true ->
+            min
+        end
+      end)
+
+    images[imageDate]
+  end
+
+  defp get_entry(directory, fileName, findImage) do
     import XmlBuilder
 
     date = fileName |> parseDate()
     url = @domain <> "audio/" <> fileName
     fileSize = File.stat!(Path.join([directory, fileName])).size
+    imageUrl = @domain <> "images/" <> findImage.(date)
 
     element(:item, nil, [
       {:title, nil, "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
@@ -62,8 +86,19 @@ defmodule DawnChorusFeed do
          Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
       {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}},
       {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
+      {"itunes:image", %{href: imageUrl}, nil},
       {:guid, nil, url}
     ])
+  end
+
+  defp get_images(directory) do
+    directory
+    |> File.ls!()
+    |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
+    # |> Enum.sort(:desc)
+    |> Enum.reduce(%{}, fn fileName, acc ->
+      Map.put(acc, parseDate(fileName), fileName)
+    end)
   end
 
   @spec parseDate(String.t()) :: DateTime.t()
