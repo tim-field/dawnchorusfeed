@@ -101,7 +101,13 @@ defmodule DawnChorusFeed do
     |> Enum.filter(fn fileName -> String.ends_with?(fileName, ".jpg") end)
     # |> Enum.sort(:desc)
     |> Enum.reduce(%{}, fn fileName, acc ->
-      Map.put(acc, parseDate(fileName), fileName)
+      date = parseDate(fileName)
+
+      if(date) do
+        Map.put(acc, parseDate(fileName), fileName)
+      else
+        acc
+      end
     end)
   end
 
