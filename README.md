@@ -8,7 +8,7 @@ that'll give you a dawnchoursfeed binary
 `scp dawnchorusfeed tim@mohiohio.com:/var/www/dawn-chorus/`
 
 interactive play with
-`iex -S mix`
+`iex -S mix` ( use iex.bat on windows )
 
 > iex(1)> DawnChorusFeed.create_feed('./example-audio','./example-images')
 

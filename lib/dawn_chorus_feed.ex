@@ -41,7 +41,10 @@ defmodule DawnChorusFeed do
             audioDirectory
             |> File.ls!()
             |> Enum.sort(:desc)
-            |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
+            |> Enum.filter(fn fileName ->
+              String.match?(fileName, ~r/07/) and
+                !String.starts_with?(fileName, ".")
+            end)
             |> Enum.map(fn fileName ->
               get_entry(audioDirectory, fileName, findImage)
             end)
