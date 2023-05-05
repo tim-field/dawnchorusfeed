@@ -41,7 +41,7 @@ defmodule DawnChorusFeed do
             audioDirectory
             |> File.ls!()
             |> Enum.sort(:desc)
-            |> Enum.filter(fn fileName -> String.ends_with?(fileName, ".opus") end)
+            |> Enum.filter(fn fileName -> !String.starts_with?(fileName, ".") end)
             |> Enum.map(fn fileName ->
               get_entry(audioDirectory, fileName, findImage)
             end)
@@ -98,7 +98,9 @@ defmodule DawnChorusFeed do
   defp get_images(directory) do
     directory
     |> File.ls!()
-    |> Enum.filter(fn fileName -> String.ends_with?(fileName, ".jpg") end)
+    |> Enum.filter(fn fileName ->
+      !String.starts_with?(fileName, ".") and String.ends_with?(fileName, ".jpg")
+    end)
     # |> Enum.sort(:desc)
     |> Enum.reduce(%{}, fn fileName, acc ->
       date = parseDate(fileName)

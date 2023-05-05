@@ -10,5 +10,7 @@ that'll give you a dawnchoursfeed binary
 interactive play with
 `iex -S mix`
 
+> iex(1)> DawnChorusFeed.create_feed('./example-audio','./example-images')
+
 get new deps with
 `mix deps.get`
