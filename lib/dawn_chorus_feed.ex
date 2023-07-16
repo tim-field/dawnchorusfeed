@@ -10,14 +10,16 @@ defmodule DawnChorusFeed do
   def create_feed(audioDirectory, imageDirectory) do
     import XmlBuilder
 
-    findImage = &get_image_file(get_images(imageDirectory), &1)
+    images = get_images(imageDirectory)
+    findImage = &get_image_for_date(images, &1)
 
     generate({
       :rss,
       [
         version: "2.0",
         "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
-        "xmlns:atom": "http://www.w3.org/2005/Atom"
+        "xmlns:atom": "http://www.w3.org/2005/Atom",
+        "xmlns:mohiohio": "https://mohiohio.com/rss"
       ],
       [
         {
@@ -28,11 +30,15 @@ defmodule DawnChorusFeed do
             {:link, nil, @domain},
             {:language, nil, "en-us"},
             {"itunes:author", nil, "Tim Field"},
-            {:description, nil,
-             "Bird song field recordings from Leith Valley, Dunedin, New Zealand"},
+            {:description, nil, "New Zealand bird song recorded at sunrise each day"},
             {"itunes:owner", nil,
              [{"itunes:name", nil, "Tim Field"}, {"itunes:email", nil, "tim@mohiohio.com"}]},
-            {"itunes:image", %{href: @domain <> "feed.jpg"}, nil},
+            {"itunes:image",
+             %{
+               href:
+                 @domain <>
+                   "images/" <> findImage.(DateTime.now!("Pacific/Auckland", Tz.TimeZoneDatabase))
+             }, nil},
             {"itunes:category", %{text: "Science"},
              [{"itunes:category", %{text: "Nature"}, nil}]},
             {"itunes:explicit", nil, "clean"},
@@ -42,11 +48,10 @@ defmodule DawnChorusFeed do
             |> File.ls!()
             |> Enum.sort(:desc)
             |> Enum.filter(fn fileName ->
-              String.match?(fileName, ~r/07/) and
-                !String.starts_with?(fileName, ".")
+              !String.starts_with?(fileName, ".")
             end)
             |> Enum.map(fn fileName ->
-              get_entry(audioDirectory, fileName, findImage)
+              get_entry(audioDirectory, fileName, findImage, images)
             end)
             |> Enum.filter(fn entry -> entry !== nil end)
           ]
@@ -55,7 +60,7 @@ defmodule DawnChorusFeed do
     })
   end
 
-  defp get_image_file(images, audioDate) do
+  defp get_image_for_date(images, compareDate) do
     imageDate =
       images
       |> Map.keys()
@@ -64,7 +69,7 @@ defmodule DawnChorusFeed do
           min === nil ->
             imageDate
 
-          abs(DateTime.diff(min, audioDate)) > abs(DateTime.diff(imageDate, audioDate)) ->
+          abs(DateTime.diff(min, compareDate)) > abs(DateTime.diff(imageDate, compareDate)) ->
             imageDate
 
           true ->
@@ -75,7 +80,19 @@ defmodule DawnChorusFeed do
     images[imageDate]
   end
 
-  defp get_entry(directory, fileName, findImage) do
+  defp get_all_images_for_date(images, compareDate) do
+    day =
+      DateTime.to_string(compareDate)
+      |> String.slice(1..9)
+
+    images
+    |> Map.filter(fn {date, _} ->
+      DateTime.to_string(date)
+      |> String.slice(1..9) == day
+    end)
+  end
+
+  defp get_entry(directory, fileName, findImage, images) do
     import XmlBuilder
 
     date = fileName |> parseDate()
@@ -86,14 +103,19 @@ defmodule DawnChorusFeed do
       imageUrl = @domain <> "images/" <> findImage.(date)
 
       element(:item, nil, [
-        {:title, nil, "Leith valley at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
+        {:title, nil, "Upper Waitati at " <> Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
         {:description, nil,
-         "A field recording of birdsong in Leith valley. Recorded at " <>
+         "New Zealand birdsong recorded at " <>
            Calendar.strftime(date, "%I:%M%P on %B %-d, %Y")},
         {:enclosure, %{length: fileSize, type: "audio/ogg", url: url}},
         {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
         {"itunes:image", %{href: imageUrl}, nil},
-        {:guid, nil, url}
+        {:guid, nil, url},
+        get_all_images_for_date(images, date)
+        |> Enum.map(fn {date, fileName} ->
+          {"mohiohio:image",
+           %{href: @domain <> "images/" <> fileName, date: DateTime.to_iso8601(date)}, nil}
+        end)
       ])
     end
   end
