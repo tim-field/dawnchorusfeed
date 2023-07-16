@@ -111,11 +111,12 @@ defmodule DawnChorusFeed do
         {:pubDate, nil, Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S %z")},
         {"itunes:image", %{href: imageUrl}, nil},
         {:guid, nil, url},
-        get_all_images_for_date(images, date)
-        |> Enum.map(fn {date, fileName} ->
-          {"mohiohio:image",
-           %{href: @domain <> "images/" <> fileName, date: DateTime.to_iso8601(date)}, nil}
-        end)
+        {"mohiohio:images", nil,
+         get_all_images_for_date(images, date)
+         |> Enum.map(fn {date, fileName} ->
+           {"mohiohio:image",
+            %{href: @domain <> "images/" <> fileName, date: DateTime.to_iso8601(date)}, nil}
+         end)}
       ])
     end
   end
