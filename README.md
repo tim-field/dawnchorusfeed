@@ -12,5 +12,7 @@ interactive play with
 
 > iex(1)> DawnChorusFeed.create_feed('./example-audio','./example-images')
 
+recompile with `recompile`
+
 get new deps with
 `mix deps.get`

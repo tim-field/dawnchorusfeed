@@ -88,7 +88,7 @@ defmodule DawnChorusFeed do
     images
     |> Map.filter(fn {date, _} ->
       DateTime.to_string(date)
-      |> String.slice(1..9) == day
+      |> String.slice(1..9) === day
     end)
   end
 
@@ -113,9 +113,13 @@ defmodule DawnChorusFeed do
         {:guid, nil, url},
         {"mohiohio:images", nil,
          get_all_images_for_date(images, date)
-         |> Enum.map(fn {date, fileName} ->
+         |> Enum.map(fn {imageDate, fileName} ->
            {"mohiohio:image",
-            %{href: @domain <> "images/" <> fileName, date: DateTime.to_iso8601(date)}, nil}
+            %{
+              href: @domain <> "images/" <> fileName,
+              date: DateTime.to_iso8601(imageDate),
+              offset: DateTime.diff(imageDate, date)
+            }, nil}
          end)}
       ])
     end
